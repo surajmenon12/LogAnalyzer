@@ -2,7 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
-  headers: { "Content-Type": "application/json" },
+  timeout: 60000, // 60 seconds
 });
 
 export default api;
@@ -50,18 +50,14 @@ export function getExportUrl(type: string, params: Record<string, unknown>) {
 export async function uploadFile(file: File, type: string) {
   const formData = new FormData();
   formData.append("file", file);
-  const { data } = await api.post(`/api/import/upload?type=${encodeURIComponent(type)}`, formData, {
-    headers: { "Content-Type": undefined },
-  });
+  const { data } = await api.post(`/api/import/upload?type=${encodeURIComponent(type)}`, formData);
   return data;
 }
 
 export async function previewFile(file: File, type: string) {
   const formData = new FormData();
   formData.append("file", file);
-  const { data } = await api.post(`/api/import/preview?type=${encodeURIComponent(type)}`, formData, {
-    headers: { "Content-Type": undefined },
-  });
+  const { data } = await api.post(`/api/import/preview?type=${encodeURIComponent(type)}`, formData);
   return data;
 }
 

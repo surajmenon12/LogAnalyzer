@@ -19,6 +19,7 @@ const columns: Column<MessageLog>[] = [
       <span className="font-mono text-xs">{String(value).slice(0, 8)}...</span>
     ),
   },
+  { key: "subaccount", label: "Subaccount" },
   { key: "from_number", label: "From" },
   { key: "to_number", label: "To" },
   {
@@ -40,6 +41,11 @@ const columns: Column<MessageLog>[] = [
     sortable: true,
     render: (value) => <StatusBadge status={String(value)} />,
   },
+  {
+    key: "amount",
+    label: "Amount",
+    render: (value) => (value ? `$${Number(value).toFixed(4)}` : "-"),
+  },
   { key: "error_code", label: "Error Code" },
   {
     key: "message_type",
@@ -56,18 +62,6 @@ const columns: Column<MessageLog>[] = [
     label: "Sent At",
     sortable: true,
     render: (value) => {
-      try {
-        return format(parseISO(String(value)), "MMM dd, yyyy HH:mm");
-      } catch {
-        return String(value);
-      }
-    },
-  },
-  {
-    key: "delivered_at",
-    label: "Delivered At",
-    render: (value) => {
-      if (!value) return "-";
       try {
         return format(parseISO(String(value)), "MMM dd, yyyy HH:mm");
       } catch {

@@ -1,0 +1,2 @@
+call_uuid,from_number,to_number,call_direction,duration,bill_duration,end_time,hangup_cause,hangup_initiator,rate(INR),total_amount(INR),initiation_time,answer_time,call_id,trunk_domain,region,from_country,to_country,transport_protocol,srtp,hangup_code,secure_trunking,secure_trunking_rate(INR),stir_verification,attestation_indicator,cnam_lookup_number_config,cnam_lookup_customer_rate(INR)
+uuid-1,+1234567890,+1098765432,inbound,120.0,120.0,2023-10-01T12:02:00,normal_hangup,caller,0,0,2023-10-01T12:00:00,2023-10-01T12:00:05,id1,t1,US,US,US,udp,false,16,false,0,v,A,d,0

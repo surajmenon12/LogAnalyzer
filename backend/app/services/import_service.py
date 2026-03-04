@@ -8,6 +8,7 @@ from dateutil import parser as dateutil_parser
 from fastapi import UploadFile
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.call_log import CallLog
 from app.models.message_log import MessageLog
@@ -22,25 +23,62 @@ CALL_COLUMNS = {
     "direction": (True, str),
     "status": (True, str),
     "error_code": (False, str),
-    "error_message": (False, str),
     "duration": (False, int),
-    "region": (True, str),
+    "bill_duration": (False, int),
+    "hangup_initiator": (False, str),
+    "rate": (False, float),
+    "amount": (False, float),
+    "call_id": (False, str),
     "carrier": (True, str),
+    "region": (True, str),
+    "from_country": (False, str),
+    "to_country": (False, str),
+    "transport_protocol": (False, str),
+    "srtp": (False, bool),
+    "secure_trunking": (False, bool),
+    "secure_trunking_rate": (False, float),
+    "stir_verification": (False, str),
+    "attestation_indicator": (False, str),
+    "cnam_lookup_number_config": (False, str),
+    "cnam_lookup_customer_rate": (False, float),
+    "answer_time": (False, "datetime"),
     "initiated_at": (True, "datetime"),
     "ended_at": (False, "datetime"),
 }
 
 MESSAGE_COLUMNS = {
+    "subaccount": (False, str),
     "from_number": (True, str),
+    "replaced_sender": (False, str),
     "to_number": (True, str),
     "direction": (True, str),
     "status": (True, str),
-    "error_code": (False, str),
-    "error_message": (False, str),
-    "message_type": (True, str),
     "units": (False, int),
-    "region": (True, str),
+    "amount": (False, float),
+    "message_rate": (False, float),
+    "message_charge": (False, float),
     "carrier": (True, str),
+    "kannel_message_id": (False, str),
+    "error_code": (False, str),
+    "powerpack_id": (False, str),
+    "requester_ip": (False, str),
+    "is_domestic": (False, bool),
+    "senderid_usecase": (False, str),
+    "waba_id": (False, str),
+    "waba_name": (False, str),
+    "conversation_id": (False, str),
+    "conversation_origin": (False, str),
+    "conversation_expiry": (False, "datetime"),
+    "surcharge_rate": (False, float),
+    "mno": (False, str),
+    "is_10dlc_registered": (False, bool),
+    "campaign_id": (False, str),
+    "region": (False, str),
+    "from_country": (False, str),
+    "to_country": (False, str),
+    "message_type": (True, str),
+
+    "carrier_error_code": (False, str),
     "sent_at": (True, "datetime"),
     "delivered_at": (False, "datetime"),
 }
@@ -92,8 +130,68 @@ HEADER_ALIASES = {
     "ended_at": "ended_at",
     # Messages
     "type": "message_type",
+    "message_type": "message_type",
     "sent_at": "sent_at",
+    "time": "sent_at",
     "delivered_at": "delivered_at",
+    "delivery_time": "delivered_at",
+    "message_uuid": "uuid",
+    "subaccount": "subaccount",
+    "replaced_sender_(as_sent_by_plivo)": "replaced_sender",
+    "replaced_sender": "replaced_sender",
+    "amount": "amount",
+    "message_rate": "message_rate",
+    "message_charge": "message_charge",
+    "kannel_message_id": "kannel_message_id",
+    "powerpack_id": "powerpack_id",
+    "requester_ip": "requester_ip",
+    "is_domestic": "is_domestic",
+    "senderid_usecase": "senderid_usecase",
+    "waba_id": "waba_id",
+    "waba_name": "waba_name",
+    "conversation_id": "conversation_id",
+    "conversation_origin": "conversation_origin",
+    "conversation_expiry": "conversation_expiry",
+    "surcharge_rate": "surcharge_rate",
+    "mobile_network_operator": "mno",
+    "mno": "mno",
+    "10dlc_registered": "is_10dlc_registered",
+    "is_10dlc_registered": "is_10dlc_registered",
+    "campaignid": "campaign_id",
+    "campaign_id": "campaign_id",
+    "carrier_error_code": "carrier_error_code",
+    "to_country": "to_country",
+    "region": "region",
+    "carrier_used": "carrier",
+    "carrier": "carrier",
+    "units": "units",
+    "status": "status",
+    "direction": "direction",
+    "plivo_errorcode": "error_code",
+    "error_code": "error_code",
+    # Calls specific
+    "call_uuid": "uuid",
+    "call_direction": "direction",
+    "bill_duration": "bill_duration",
+    "end_time": "ended_at",
+    "hangup_cause": "status",
+    "hangup_initiator": "hangup_initiator",
+    "rate(inr)": "rate",
+    "total_amount(inr)": "amount",
+    "initiation_time": "initiated_at",
+    "answer_time": "answer_time",
+    "call_id": "call_id",
+    "trunk_domain": "carrier",
+    "from_country": "from_country",
+    "transport_protocol": "transport_protocol",
+    "srtp": "srtp",
+    "hangup_code": "error_code",
+    "secure_trunking": "secure_trunking",
+    "secure_trunking_rate(inr)": "secure_trunking_rate",
+    "stir_verification": "stir_verification",
+    "attestation_indicator": "attestation_indicator",
+    "cnam_lookup_number_config": "cnam_lookup_number_config",
+    "cnam_lookup_customer_rate(inr)": "cnam_lookup_customer_rate",
     # SIP trunks
     "trunk_name": "trunk_name",
     "latency_(ms)": "latency_ms",
@@ -104,18 +202,6 @@ HEADER_ALIASES = {
     "jitter_(ms)": "jitter_ms",
     "jitter_ms": "jitter_ms",
     "recorded_at": "recorded_at",
-    # Common
-    "uuid": "uuid",
-    "direction": "direction",
-    "status": "status",
-    "error_code": "error_code",
-    "error_message": "error_message",
-    "region": "region",
-    "carrier": "carrier",
-    "units": "units",
-    "from_number": "from_number",
-    "to_number": "to_number",
-    "message_type": "message_type",
 }
 
 
@@ -126,13 +212,22 @@ def _normalize_header(header: str) -> str:
 
 
 def _parse_datetime(value: str) -> datetime:
-    return dateutil_parser.parse(value)
+    # Plivo sometimes exports dates like '2026-03-04 02:49:55.190487383 +0000 UTC'
+    # dateutil.parser.parse usually handles this, but let's be safe and strip ' UTC' if present
+    # as it can be redundant with the offset and sometimes causes issues.
+    clean_value = value.strip()
+    if clean_value.endswith(" UTC"):
+        clean_value = clean_value[:-4].strip()
+    
+    # Also, some formats might have too many decimal places for microseconds (Python limit 6)
+    # but dateutil usually handles truncation.
+    return dateutil_parser.parse(clean_value)
 
 
 def _parse_value(value: str, field: str, type_hint, log_type: str) -> Tuple[Any, Optional[str]]:
     """Parse a single value. Returns (parsed_value, error_message_or_None)."""
     value = value.strip()
-    if not value:
+    if not value or value.upper() in ("N/A", "-", "NULL", "NONE"):
         return None, None
 
     if type_hint == "datetime":
@@ -142,7 +237,8 @@ def _parse_value(value: str, field: str, type_hint, log_type: str) -> Tuple[Any,
             return None, f"Invalid datetime format: '{value}'"
     elif type_hint == int:
         try:
-            return int(value), None
+            # Handle cases like "110.0" by converting to float first
+            return int(float(value)), None
         except (ValueError, TypeError):
             return None, f"Invalid integer: '{value}'"
     elif type_hint == float:
@@ -150,12 +246,50 @@ def _parse_value(value: str, field: str, type_hint, log_type: str) -> Tuple[Any,
             return float(value), None
         except (ValueError, TypeError):
             return None, f"Invalid number: '{value}'"
+    elif type_hint == bool:
+        val_lower = value.lower()
+        if val_lower in ("true", "yes", "1", "t", "y"):
+            return True, None
+        if val_lower in ("false", "no", "0", "f", "n"):
+            return False, None
+        return None, f"Invalid boolean: '{value}'"
     else:
         # String — check enum if applicable
-        enums = VALID_ENUMS.get(log_type, {})
-        if field in enums and value.lower() not in enums[field]:
-            allowed = ", ".join(sorted(enums[field]))
-            return None, f"Invalid value '{value}'. Allowed: {allowed}"
+        val_lower = value.lower()
+        
+        # Mapping logic (analytics friendly)
+        if log_type == "calls":
+            if field == "status":
+                mapping = {
+                    "normal_clearing": "completed",
+                    "normal_hangup": "completed",
+                    "busy": "busy",
+                    "user_busy": "busy",
+                    "no_answer": "no-answer",
+                    "call_rejected": "failed",
+                    "originator_cancel": "cancelled",
+                    "customer_cancelled": "cancelled",
+                    "carrier_cancelled": "cancelled",
+                }
+                if val_lower in mapping:
+                    return mapping[val_lower], None
+                
+                # Treat other specific errors as "failed"
+                if any(x in val_lower for x in ["error", "fail", "unavailable", "interrupted", "timeout", "no_more_destinations"]):
+                    return "failed", None
+
+        elif log_type == "messages":
+            if field == "status":
+                if val_lower == "rejected":
+                    return "failed", None
+                if val_lower == "received":
+                    return "delivered", None
+            elif field == "message_type":
+                if "sms" in val_lower: return "sms", None
+                if "mms" in val_lower: return "mms", None
+
+        # We no longer strictly enforce VALID_ENUMS for status/direction 
+        # because provider formats vary wildly. We rely on the DB's capacity.
         return value, None
 
 
@@ -245,20 +379,32 @@ async def import_data(
     file: UploadFile,
     log_type: str,
 ) -> Tuple[int, int, int, List[ImportErrorSchema]]:
-    """Parse, validate, and import data. Returns (total, imported, skipped, errors)."""
+    """Parse, validate, and import data in batches. Returns (total, imported, skipped, errors)."""
     rows = await read_file_rows(file)
     valid_rows, errors = validate_and_parse_rows(rows, log_type)
 
     _, model_class = TYPE_CONFIG[log_type]
-    objects = [model_class(**row) for row in valid_rows]
-
-    if objects:
-        db.add_all(objects)
-        await db.commit()
-
+    
     total = len(rows)
     imported = len(valid_rows)
     skipped = total - imported
+
+    try:
+        # Insert in batches to prevent transaction timeouts or memory issues
+        batch_size = 500
+        for i in range(0, len(valid_rows), batch_size):
+            batch = valid_rows[i : i + batch_size]
+            objects = [model_class(**row) for row in batch]
+            db.add_all(objects)
+            await db.flush() # Send to DB but don't commit yet
+
+        await db.commit()
+    except SQLAlchemyError as e:
+        await db.rollback()
+        # Log the error and add to errors list
+        errors.append(ImportErrorSchema(row=0, field="database", message=str(e)))
+        return total, 0, total, errors
+
     return total, imported, skipped, errors
 
 
