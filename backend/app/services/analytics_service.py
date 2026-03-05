@@ -5,7 +5,6 @@ from typing import Optional
 
 from app.models.call_log import CallLog
 from app.models.message_log import MessageLog
-from app.models.sip_trunk_log import SIPTrunkLog
 from app.models.carrier import Carrier
 
 
@@ -52,24 +51,6 @@ async def get_overview_stats(
     msg_result = await db.execute(msg_query)
     msg_row = msg_result.one()
 
-    # SIP trunk stats
-    sip_conditions = []
-    if time_from:
-        sip_conditions.append(SIPTrunkLog.recorded_at >= time_from)
-    if time_to:
-        sip_conditions.append(SIPTrunkLog.recorded_at <= time_to)
-
-    sip_query = select(
-        func.coalesce(func.avg(SIPTrunkLog.latency_ms), 0).label("avg_latency"),
-        func.coalesce(func.avg(SIPTrunkLog.packet_loss_pct), 0).label("avg_packet_loss"),
-        func.count(case((SIPTrunkLog.status == "degraded", 1))).label("degraded"),
-    )
-    if sip_conditions:
-        sip_query = sip_query.where(and_(*sip_conditions))
-
-    sip_result = await db.execute(sip_query)
-    sip_row = sip_result.one()
-
     # Active carriers
     carrier_result = await db.execute(
         select(func.count(Carrier.id)).where(Carrier.status == "active")
@@ -91,10 +72,7 @@ async def get_overview_stats(
         "failed_messages": msg_row.failed or 0,
         "message_success_rate": round((successful_messages / total_messages * 100) if total_messages > 0 else 0, 2),
         "avg_call_duration": round(float(call_row.avg_duration), 2),
-        "avg_sip_latency": round(float(sip_row.avg_latency), 2),
-        "avg_packet_loss": round(float(sip_row.avg_packet_loss), 2),
         "active_carriers": active_carriers or 0,
-        "degraded_trunks": sip_row.degraded or 0,
     }
 
 
@@ -246,3 +224,74 @@ async def get_carrier_performance(
         })
 
     return results
+
+
+async def get_error_distribution(
+    db: AsyncSession,
+    *,
+    time_from: Optional[datetime] = None,
+    time_to: Optional[datetime] = None,
+):
+    # Call error distribution
+    call_conditions = [CallLog.error_code.isnot(None), CallLog.error_code != ""]
+    if time_from:
+        call_conditions.append(CallLog.initiated_at >= time_from)
+    if time_to:
+        call_conditions.append(CallLog.initiated_at <= time_to)
+
+    call_query = (
+        select(
+            CallLog.error_code,
+            func.count(CallLog.id).label("count"),
+        )
+        .where(and_(*call_conditions))
+        .group_by(CallLog.error_code)
+        .order_by(func.count(CallLog.id).desc())
+    )
+
+    call_result = await db.execute(call_query)
+    call_rows = call_result.all()
+
+    call_total = sum(row.count for row in call_rows) if call_rows else 0
+    call_errors = [
+        {
+            "error_code": row.error_code,
+            "error_message": "",
+            "count": row.count,
+            "percentage": round((row.count / call_total * 100) if call_total > 0 else 0, 2),
+        }
+        for row in call_rows
+    ]
+
+    # Message error distribution
+    msg_conditions = [MessageLog.error_code.isnot(None), MessageLog.error_code != ""]
+    if time_from:
+        msg_conditions.append(MessageLog.sent_at >= time_from)
+    if time_to:
+        msg_conditions.append(MessageLog.sent_at <= time_to)
+
+    msg_query = (
+        select(
+            MessageLog.error_code,
+            func.count(MessageLog.id).label("count"),
+        )
+        .where(and_(*msg_conditions))
+        .group_by(MessageLog.error_code)
+        .order_by(func.count(MessageLog.id).desc())
+    )
+
+    msg_result = await db.execute(msg_query)
+    msg_rows = msg_result.all()
+
+    msg_total = sum(row.count for row in msg_rows) if msg_rows else 0
+    message_errors = [
+        {
+            "error_code": row.error_code,
+            "error_message": "",
+            "count": row.count,
+            "percentage": round((row.count / msg_total * 100) if msg_total > 0 else 0, 2),
+        }
+        for row in msg_rows
+    ]
+
+    return {"call_errors": call_errors, "message_errors": message_errors}

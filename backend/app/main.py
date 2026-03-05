@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine
 from app.models import Base
-from app.routers import calls, messages, sip_trunks, analytics, export, upload
+from app.routers import calls, messages, analytics, export, upload
 
 
 @asynccontextmanager
@@ -29,7 +29,6 @@ app.add_middleware(
 
 app.include_router(calls.router)
 app.include_router(messages.router)
-app.include_router(sip_trunks.router)
 app.include_router(analytics.router)
 app.include_router(export.router)
 app.include_router(upload.router)

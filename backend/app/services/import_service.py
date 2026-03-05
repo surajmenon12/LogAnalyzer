@@ -12,12 +12,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.call_log import CallLog
 from app.models.message_log import MessageLog
-from app.models.sip_trunk_log import SIPTrunkLog
 from app.schemas.upload import ImportError as ImportErrorSchema
 
 # Column definitions per log type
 # Each entry: (field_name, required, parser)
 CALL_COLUMNS = {
+    "uuid": (False, str),
     "from_number": (True, str),
     "to_number": (True, str),
     "direction": (True, str),
@@ -29,8 +29,8 @@ CALL_COLUMNS = {
     "rate": (False, float),
     "amount": (False, float),
     "call_id": (False, str),
-    "carrier": (True, str),
-    "region": (True, str),
+    "carrier": (False, str),
+    "region": (False, str),
     "from_country": (False, str),
     "to_country": (False, str),
     "transport_protocol": (False, str),
@@ -47,6 +47,7 @@ CALL_COLUMNS = {
 }
 
 MESSAGE_COLUMNS = {
+    "uuid": (False, str),
     "subaccount": (False, str),
     "from_number": (True, str),
     "replaced_sender": (False, str),
@@ -57,7 +58,7 @@ MESSAGE_COLUMNS = {
     "amount": (False, float),
     "message_rate": (False, float),
     "message_charge": (False, float),
-    "carrier": (True, str),
+    "carrier": (False, str),
     "kannel_message_id": (False, str),
     "error_code": (False, str),
     "powerpack_id": (False, str),
@@ -76,24 +77,10 @@ MESSAGE_COLUMNS = {
     "region": (False, str),
     "from_country": (False, str),
     "to_country": (False, str),
-    "message_type": (True, str),
-
+    "message_type": (False, str),
     "carrier_error_code": (False, str),
     "sent_at": (True, "datetime"),
     "delivered_at": (False, "datetime"),
-}
-
-SIP_TRUNK_COLUMNS = {
-    "trunk_name": (True, str),
-    "status": (True, str),
-    "error_code": (False, str),
-    "error_message": (False, str),
-    "latency_ms": (True, float),
-    "packet_loss_pct": (True, float),
-    "jitter_ms": (True, float),
-    "region": (True, str),
-    "carrier": (True, str),
-    "recorded_at": (True, "datetime"),
 }
 
 VALID_ENUMS = {
@@ -106,15 +93,11 @@ VALID_ENUMS = {
         "status": {"delivered", "failed", "queued", "sent", "undelivered"},
         "message_type": {"sms", "mms"},
     },
-    "sip-trunks": {
-        "status": {"healthy", "degraded", "down"},
-    },
 }
 
 TYPE_CONFIG = {
     "calls": (CALL_COLUMNS, CallLog),
     "messages": (MESSAGE_COLUMNS, MessageLog),
-    "sip-trunks": (SIP_TRUNK_COLUMNS, SIPTrunkLog),
 }
 
 # Alias map: maps alternate/exported CSV header names to canonical field names.
@@ -192,16 +175,6 @@ HEADER_ALIASES = {
     "attestation_indicator": "attestation_indicator",
     "cnam_lookup_number_config": "cnam_lookup_number_config",
     "cnam_lookup_customer_rate(inr)": "cnam_lookup_customer_rate",
-    # SIP trunks
-    "trunk_name": "trunk_name",
-    "latency_(ms)": "latency_ms",
-    "latency_ms": "latency_ms",
-    "packet_loss_(%)": "packet_loss_pct",
-    "packet_loss_%": "packet_loss_pct",
-    "packet_loss_pct": "packet_loss_pct",
-    "jitter_(ms)": "jitter_ms",
-    "jitter_ms": "jitter_ms",
-    "recorded_at": "recorded_at",
 }
 
 
@@ -367,7 +340,17 @@ def validate_and_parse_rows(
                 parsed[field] = value
 
         if row_valid:
-            parsed["uuid"] = str(uuid_lib.uuid4())
+            # Use UUID from CSV if provided, otherwise generate one
+            if not parsed.get("uuid"):
+                parsed["uuid"] = str(uuid_lib.uuid4())
+            # Default region/carrier if missing
+            if not parsed.get("region"):
+                parsed["region"] = "Unknown"
+            if not parsed.get("carrier"):
+                parsed["carrier"] = "Unknown"
+            # Default message_type if missing (for messages)
+            if log_type == "messages" and not parsed.get("message_type"):
+                parsed["message_type"] = "sms"
             parsed["created_at"] = datetime.utcnow()
             valid_rows.append(parsed)
 

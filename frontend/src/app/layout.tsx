@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Plivo Log Analysis Dashboard",
-  description: "Monitor and analyze call, message, and SIP trunk logs",
+  description: "Monitor and analyze call and message logs",
 };
 
 export default function RootLayout({

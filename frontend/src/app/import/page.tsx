@@ -7,7 +7,7 @@ import { DataTable, Column } from "@/components/data/DataTable";
 import { MetricCard } from "@/components/cards/MetricCard";
 import { uploadFile, previewFile, clearData, getTemplateUrl } from "@/lib/api";
 
-type LogType = "calls" | "messages" | "sip-trunks";
+type LogType = "calls" | "messages";
 
 interface ImportError {
   row: number;
@@ -32,7 +32,6 @@ interface ImportResultData {
 const LOG_TYPE_LABELS: Record<LogType, string> = {
   calls: "Call Logs",
   messages: "Message Logs",
-  "sip-trunks": "SIP Trunk Logs",
 };
 
 const PREVIEW_COLUMNS: Record<LogType, Column[]> = {
@@ -56,16 +55,6 @@ const PREVIEW_COLUMNS: Record<LogType, Column[]> = {
     { key: "region", label: "Region" },
     { key: "carrier", label: "Carrier" },
     { key: "sent_at", label: "Sent At" },
-  ],
-  "sip-trunks": [
-    { key: "trunk_name", label: "Trunk" },
-    { key: "status", label: "Status" },
-    { key: "latency_ms", label: "Latency (ms)" },
-    { key: "packet_loss_pct", label: "Packet Loss (%)" },
-    { key: "jitter_ms", label: "Jitter (ms)" },
-    { key: "region", label: "Region" },
-    { key: "carrier", label: "Carrier" },
-    { key: "recorded_at", label: "Recorded At" },
   ],
 };
 

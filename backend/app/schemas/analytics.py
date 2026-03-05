@@ -12,10 +12,7 @@ class OverviewStats(BaseModel):
     failed_messages: int
     message_success_rate: float
     avg_call_duration: float
-    avg_sip_latency: float
-    avg_packet_loss: float
     active_carriers: int
-    degraded_trunks: int
 
 
 class TrendPoint(BaseModel):
@@ -46,6 +43,11 @@ class ErrorDistribution(BaseModel):
     error_message: str
     count: int
     percentage: float
+
+
+class ErrorDistributionResponse(BaseModel):
+    call_errors: List[ErrorDistribution]
+    message_errors: List[ErrorDistribution]
 
 
 class RegionBreakdown(BaseModel):

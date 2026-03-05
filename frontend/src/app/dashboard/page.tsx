@@ -1,16 +1,20 @@
 "use client";
 
-import { useOverview, useTrends, useCarrierPerformance } from "@/hooks/useAnalytics";
+import { useOverview, useTrends, useCarrierPerformance, useErrorDistribution } from "@/hooks/useAnalytics";
 import { MetricCard } from "@/components/cards/MetricCard";
 import { MetricGrid } from "@/components/cards/MetricGrid";
 import { TrendLineChart } from "@/components/charts/TrendLineChart";
 import { StatusPieChart } from "@/components/charts/StatusPieChart";
 import { CarrierBarChart } from "@/components/charts/CarrierBarChart";
+import { ErrorDistributionChart } from "@/components/charts/ErrorDistributionChart";
+import { EmptyState } from "@/components/data/EmptyState";
+import { CALL_ERROR_CODE_LABELS, MESSAGE_ERROR_CODE_LABELS } from "@/lib/constants";
 
 export default function DashboardPage() {
   const { data: overview, loading: overviewLoading } = useOverview({});
   const { data: trends, loading: trendsLoading } = useTrends({});
   const { data: carriers, loading: carriersLoading } = useCarrierPerformance({});
+  const { data: errorDist } = useErrorDistribution({});
 
   if (overviewLoading || trendsLoading || carriersLoading) {
     return (
@@ -20,26 +24,37 @@ export default function DashboardPage() {
     );
   }
 
+  const hasNoData = overview && overview.total_calls === 0 && overview.total_messages === 0;
+
+  if (hasNoData) {
+    return (
+      <EmptyState
+        title="Welcome to Plivo Log Analyzer"
+        description="You don't have any data yet. Head over to the Import section and upload your Plivo CSV exports to see insights and trends."
+      />
+    );
+  }
+
   const callStatusData = overview
     ? [
-        { name: "completed", value: overview.successful_calls },
-        { name: "failed", value: overview.failed_calls },
-        {
-          name: "other",
-          value: overview.total_calls - overview.successful_calls - overview.failed_calls,
-        },
-      ].filter((d) => d.value > 0)
+      { name: "completed", value: overview.successful_calls },
+      { name: "failed", value: overview.failed_calls },
+      {
+        name: "other",
+        value: overview.total_calls - overview.successful_calls - overview.failed_calls,
+      },
+    ].filter((d) => d.value > 0)
     : [];
 
   const msgStatusData = overview
     ? [
-        { name: "delivered", value: overview.successful_messages },
-        { name: "failed", value: overview.failed_messages },
-        {
-          name: "other",
-          value: overview.total_messages - overview.successful_messages - overview.failed_messages,
-        },
-      ].filter((d) => d.value > 0)
+      { name: "delivered", value: overview.successful_messages },
+      { name: "failed", value: overview.failed_messages },
+      {
+        name: "other",
+        value: overview.total_messages - overview.successful_messages - overview.failed_messages,
+      },
+    ].filter((d) => d.value > 0)
     : [];
 
   return (
@@ -89,37 +104,8 @@ export default function DashboardPage() {
           subtitle="Across all calls"
         />
         <MetricCard
-          title="Avg SIP Latency"
-          value={`${(overview?.avg_sip_latency ?? 0).toFixed(1)}ms`}
-          trend={
-            (overview?.avg_sip_latency ?? 0) < 100
-              ? "up"
-              : "down"
-          }
-          trendColor={
-            (overview?.avg_sip_latency ?? 0) < 100
-              ? "green"
-              : "red"
-          }
-        />
-        <MetricCard
-          title="Avg Packet Loss"
-          value={`${(overview?.avg_packet_loss ?? 0).toFixed(2)}%`}
-          trend={
-            (overview?.avg_packet_loss ?? 0) < 2
-              ? "up"
-              : "down"
-          }
-          trendColor={
-            (overview?.avg_packet_loss ?? 0) < 2
-              ? "green"
-              : "red"
-          }
-        />
-        <MetricCard
           title="Active Carriers"
           value={overview?.active_carriers ?? 0}
-          subtitle={`${overview?.degraded_trunks ?? 0} degraded trunks`}
         />
       </MetricGrid>
 
@@ -137,6 +123,19 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <StatusPieChart data={callStatusData} title="Call Status Distribution" />
         <StatusPieChart data={msgStatusData} title="Message Status Distribution" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ErrorDistributionChart
+          data={errorDist?.call_errors ?? []}
+          title="Call Error Code Distribution"
+          labelMap={CALL_ERROR_CODE_LABELS}
+        />
+        <ErrorDistributionChart
+          data={errorDist?.message_errors ?? []}
+          title="Message Error Code Distribution"
+          labelMap={MESSAGE_ERROR_CODE_LABELS}
+        />
       </div>
 
       <CarrierBarChart

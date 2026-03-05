@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Phone,
   MessageSquare,
-  Network,
   Building2,
   Upload,
 } from "lucide-react";
@@ -15,7 +14,6 @@ const iconMap = {
   LayoutDashboard,
   Phone,
   MessageSquare,
-  Network,
   Building2,
   Upload,
 };
@@ -24,7 +22,6 @@ const NAV_ITEMS = [
   { label: "Overview", href: "/dashboard", icon: "LayoutDashboard" as const },
   { label: "Call Logs", href: "/calls", icon: "Phone" as const },
   { label: "Messages", href: "/messages", icon: "MessageSquare" as const },
-  { label: "SIP Trunks", href: "/sip-trunks", icon: "Network" as const },
   { label: "Carriers", href: "/carriers", icon: "Building2" as const },
   { label: "Import Data", href: "/import", icon: "Upload" as const },
 ];

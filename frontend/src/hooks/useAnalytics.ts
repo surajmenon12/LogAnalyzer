@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchOverview, fetchTrends, fetchCarrierPerformance } from "@/lib/api";
-import { OverviewStats, TrendResponse, CarrierPerformance } from "@/lib/types";
+import { fetchOverview, fetchTrends, fetchCarrierPerformance, fetchErrorDistribution } from "@/lib/api";
+import { OverviewStats, TrendResponse, CarrierPerformance, ErrorDistributionResponse } from "@/lib/types";
 
 export function useOverview(params: Record<string, unknown>) {
   const [data, setData] = useState<OverviewStats | null>(null);
@@ -73,6 +73,35 @@ export function useCarrierPerformance(params: Record<string, unknown>) {
     setError(null);
 
     fetchCarrierPerformance(params)
+      .then((res) => {
+        if (!cancelled) setData(res);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [JSON.stringify(params)]);
+
+  return { data, loading, error };
+}
+
+export function useErrorDistribution(params: Record<string, unknown>) {
+  const [data, setData] = useState<ErrorDistributionResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    fetchErrorDistribution(params)
       .then((res) => {
         if (!cancelled) setData(res);
       })

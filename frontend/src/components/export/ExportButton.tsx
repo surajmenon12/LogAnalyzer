@@ -5,7 +5,7 @@ import { getExportUrl } from "@/lib/api";
 import { FilterState } from "@/lib/types";
 
 interface ExportButtonProps {
-  type: "calls" | "messages" | "sip-trunks";
+  type: "calls" | "messages";
   filters: FilterState;
 }
 

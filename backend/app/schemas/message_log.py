@@ -32,7 +32,7 @@ class MessageLogResponse(BaseModel):
     mno: Optional[str] = None
     is_10dlc_registered: bool
     campaign_id: Optional[str] = None
-    region: str
+    region: Optional[str] = None
     message_type: str
     carrier_error_code: Optional[str] = None
     sent_at: datetime

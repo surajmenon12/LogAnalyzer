@@ -19,21 +19,6 @@ CARRIERS = [
     {"name": "Deutsche Telekom", "type": "voice", "region": "EU-West"},
 ]
 
-TRUNK_NAMES = [
-    "trunk-us-east-01", "trunk-us-east-02", "trunk-us-west-01",
-    "trunk-eu-west-01", "trunk-eu-west-02", "trunk-apac-01", "trunk-apac-02",
-]
-
-TRUNK_REGION_MAP = {
-    "trunk-us-east-01": "US-East",
-    "trunk-us-east-02": "US-East",
-    "trunk-us-west-01": "US-West",
-    "trunk-eu-west-01": "EU-West",
-    "trunk-eu-west-02": "EU-West",
-    "trunk-apac-01": "APAC",
-    "trunk-apac-02": "APAC",
-}
-
 CALL_ERROR_CODES = {
     "3000": "normal_hangup",
     "3020": "rtp_timeout",
@@ -66,17 +51,6 @@ CALL_STATUS_WEIGHTS = [0.72, 0.12, 0.06, 0.07, 0.03]
 
 MSG_STATUSES = ["delivered", "failed", "queued", "sent", "undelivered"]
 MSG_STATUS_WEIGHTS = [0.75, 0.08, 0.02, 0.10, 0.05]
-
-SIP_STATUSES = ["healthy", "degraded", "down"]
-SIP_STATUS_WEIGHTS = [0.70, 0.22, 0.08]
-
-SIP_ERROR_CODES = {
-    "503": "service_unavailable",
-    "408": "request_timeout",
-    "480": "temporarily_unavailable",
-    "500": "internal_server_error",
-}
-
 
 def generate_phone():
     return f"+1{random.randint(2000000000, 9999999999)}"
@@ -157,53 +131,5 @@ def generate_message_logs(count=300, days_back=30):
             "carrier": carrier["name"],
             "sent_at": sent_at,
             "delivered_at": delivered_at,
-        })
-    return logs
-
-
-def generate_sip_trunk_logs(count=200, days_back=30):
-    now = datetime.now(timezone.utc)
-    logs = []
-    for _ in range(count):
-        trunk = random.choice(TRUNK_NAMES)
-        status = random.choices(SIP_STATUSES, weights=SIP_STATUS_WEIGHTS, k=1)[0]
-        region = TRUNK_REGION_MAP[trunk]
-
-        # Latency correlates with status
-        if status == "healthy":
-            latency = random.uniform(10, 80)
-            packet_loss = random.uniform(0, 1.0)
-            jitter = random.uniform(1, 15)
-        elif status == "degraded":
-            latency = random.uniform(80, 200)
-            packet_loss = random.uniform(1.0, 5.0)
-            jitter = random.uniform(15, 50)
-        else:  # down
-            latency = random.uniform(200, 500)
-            packet_loss = random.uniform(5.0, 25.0)
-            jitter = random.uniform(50, 150)
-
-        error_code = None
-        error_message = None
-        if status in ("degraded", "down"):
-            code = random.choice(list(SIP_ERROR_CODES.keys()))
-            error_code = code
-            error_message = SIP_ERROR_CODES[code]
-
-        # Pick a carrier from the same region
-        region_carriers = [c for c in CARRIERS if c["region"] == region]
-        carrier = random.choice(region_carriers) if region_carriers else random.choice(CARRIERS)
-
-        logs.append({
-            "trunk_name": trunk,
-            "status": status,
-            "error_code": error_code,
-            "error_message": error_message,
-            "latency_ms": round(latency, 2),
-            "packet_loss_pct": round(packet_loss, 2),
-            "jitter_ms": round(jitter, 2),
-            "region": region,
-            "carrier": carrier["name"],
-            "recorded_at": now - timedelta(days=random.uniform(0, days_back), hours=random.uniform(0, 24)),
         })
     return logs

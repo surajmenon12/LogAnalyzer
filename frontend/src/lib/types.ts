@@ -77,21 +77,6 @@ export interface MessageLog {
   created_at: string;
 }
 
-export interface SIPTrunkLog {
-  id: number;
-  trunk_name: string;
-  status: string;
-  error_code: string | null;
-  error_message: string | null;
-  latency_ms: number;
-  packet_loss_pct: number;
-  jitter_ms: number;
-  region: string;
-  carrier: string;
-  recorded_at: string;
-  created_at: string;
-}
-
 export interface OverviewStats {
   total_calls: number;
   successful_calls: number;
@@ -102,10 +87,7 @@ export interface OverviewStats {
   failed_messages: number;
   message_success_rate: number;
   avg_call_duration: number;
-  avg_sip_latency: number;
-  avg_packet_loss: number;
   active_carriers: number;
-  degraded_trunks: number;
 }
 
 export interface TrendPoint {
@@ -129,6 +111,18 @@ export interface CarrierPerformance {
   avg_duration: number;
   total_messages: number;
   message_success_rate: number;
+}
+
+export interface ErrorDistribution {
+  error_code: string;
+  error_message: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ErrorDistributionResponse {
+  call_errors: ErrorDistribution[];
+  message_errors: ErrorDistribution[];
 }
 
 export interface FilterState {

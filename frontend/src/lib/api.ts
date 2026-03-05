@@ -17,11 +17,6 @@ export async function fetchMessageLogs(params: Record<string, unknown>) {
   return data;
 }
 
-export async function fetchSipTrunkLogs(params: Record<string, unknown>) {
-  const { data } = await api.get("/api/logs/sip-trunks", { params });
-  return data;
-}
-
 export async function fetchOverview(params: Record<string, unknown>) {
   const { data } = await api.get("/api/analytics/overview", { params });
   return data;
@@ -34,6 +29,11 @@ export async function fetchTrends(params: Record<string, unknown>) {
 
 export async function fetchCarrierPerformance(params: Record<string, unknown>) {
   const { data } = await api.get("/api/analytics/carriers", { params });
+  return data;
+}
+
+export async function fetchErrorDistribution(params: Record<string, unknown>) {
+  const { data } = await api.get("/api/analytics/error-distribution", { params });
   return data;
 }
 

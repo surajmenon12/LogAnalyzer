@@ -3,8 +3,8 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from app.config import settings
-from app.models import Base, Carrier, CallLog, MessageLog, SIPTrunkLog
-from app.seed.generators import CARRIERS, generate_call_logs, generate_message_logs, generate_sip_trunk_logs
+from app.models import Base, Carrier, CallLog, MessageLog
+from app.seed.generators import CARRIERS, generate_call_logs, generate_message_logs
 
 
 async def seed():
@@ -36,13 +36,6 @@ async def seed():
             session.add(MessageLog(**md))
         await session.commit()
         print(f"Seeded {len(msg_data)} message logs")
-
-        # SIP trunk logs
-        sip_data = generate_sip_trunk_logs(200)
-        for sd in sip_data:
-            session.add(SIPTrunkLog(**sd))
-        await session.commit()
-        print(f"Seeded {len(sip_data)} SIP trunk logs")
 
     await engine.dispose()
     print("Seeding complete!")

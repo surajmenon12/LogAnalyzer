@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.call_log import CallLog
 from app.models.message_log import MessageLog
-from app.models.sip_trunk_log import SIPTrunkLog
 
 
 def _build_conditions(model, time_field, *, time_from=None, time_to=None, region=None, carrier=None, status=None):
@@ -103,41 +102,3 @@ async def export_messages_csv(
             output.truncate(0)
 
     return StreamingResponse(generate(), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=message_logs.csv"})
-
-
-async def export_sip_trunks_csv(
-    db: AsyncSession,
-    *,
-    time_from: Optional[datetime] = None,
-    time_to: Optional[datetime] = None,
-    region: Optional[str] = None,
-    carrier: Optional[str] = None,
-    status: Optional[str] = None,
-):
-    query = select(SIPTrunkLog).order_by(SIPTrunkLog.recorded_at.desc())
-    conditions = _build_conditions(SIPTrunkLog, SIPTrunkLog.recorded_at, time_from=time_from, time_to=time_to, region=region, carrier=carrier, status=status)
-    if conditions:
-        query = query.where(and_(*conditions))
-
-    result = await db.execute(query)
-    rows = result.scalars().all()
-
-    def generate():
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(["Trunk Name", "Status", "Error Code", "Error Message", "Latency (ms)", "Packet Loss (%)", "Jitter (ms)", "Region", "Carrier", "Recorded At"])
-        yield output.getvalue()
-        output.seek(0)
-        output.truncate(0)
-
-        for row in rows:
-            writer.writerow([
-                row.trunk_name, row.status, row.error_code or "", row.error_message or "",
-                row.latency_ms, row.packet_loss_pct, row.jitter_ms,
-                row.region, row.carrier, row.recorded_at.isoformat(),
-            ])
-            yield output.getvalue()
-            output.seek(0)
-            output.truncate(0)
-
-    return StreamingResponse(generate(), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=sip_trunk_logs.csv"})

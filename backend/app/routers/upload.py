@@ -29,7 +29,7 @@ def _validate_type(log_type: str) -> str:
 @router.post("/upload", response_model=ImportResult)
 async def upload_file(
     file: UploadFile = File(...),
-    type: str = Query(..., description="calls, messages, or sip-trunks"),
+    type: str = Query(..., description="calls or messages"),
     db: AsyncSession = Depends(get_db),
 ):
     _validate_type(type)
@@ -53,7 +53,7 @@ async def upload_file(
 @router.post("/preview", response_model=PreviewResult)
 async def preview_file(
     file: UploadFile = File(...),
-    type: str = Query(..., description="calls, messages, or sip-trunks"),
+    type: str = Query(..., description="calls or messages"),
 ):
     _validate_type(type)
 
@@ -75,7 +75,7 @@ async def preview_file(
 
 @router.post("/clear")
 async def clear_data(
-    type: str = Query(..., description="calls, messages, or sip-trunks"),
+    type: str = Query(..., description="calls or messages"),
     db: AsyncSession = Depends(get_db),
 ):
     _validate_type(type)

@@ -6,7 +6,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard Overview",
   "/calls": "Call Logs",
   "/messages": "Message Logs",
-  "/sip-trunks": "SIP Trunk Health",
   "/carriers": "Carrier Performance",
   "/import": "Import Data",
 };
